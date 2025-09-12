@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - FINNHUB_API_KEY=${FINNHUB_API_KEY:-d327lr1r01qn0gi2pa10d327lr1r01qn0gi2pa1g}
+      - FINNHUB_WEBHOOK_SECRET=${FINNHUB_WEBHOOK_SECRET:-d327lr1r01qn0gi2pa2g}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+      - PORT=5000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000
+
+volumes:
+  node_modules_backend:
+  node_modules_frontend:
