@@ -5,6 +5,7 @@ import StockSearch from './components/StockSearch';
 import StockCard from './components/StockCard';
 import StockChart from './components/StockChart';
 import FundamentalAnalysis from './components/FundamentalAnalysis';
+import NewsAndSentiment from './components/NewsAndSentiment';
 import { StockService } from './services/api';
 import { StockData, LoadingState } from './types';
 import { AlertCircle, TrendingUp, BarChart3, Globe, Shield } from 'lucide-react';
@@ -111,16 +112,16 @@ function App() {
             {/* Stock Card */}
             <StockCard stockData={stockData} />
 
-            {/* Chart and Fundamental Analysis */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              {/* Chart */}
-              {stockData.historical && (
-                <StockChart 
-                  symbol={stockData.symbol}
-                  historicalData={stockData.historical}
-                />
-              )}
+            {/* Chart (Full Width) */}
+            {stockData.historical && (
+              <StockChart 
+                symbol={stockData.symbol}
+                historicalData={stockData.historical}
+              />
+            )}
 
+            {/* Fundamental Analysis and News & Sentiment (Side by Side) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Fundamental Analysis */}
               {stockData.fundamentals && (
                 <FundamentalAnalysis 
@@ -128,6 +129,11 @@ function App() {
                   fundamentals={stockData.fundamentals}
                 />
               )}
+
+              {/* News & Sentiment Analysis */}
+              <NewsAndSentiment 
+                symbol={stockData.symbol}
+              />
             </div>
           </div>
         )}
@@ -233,10 +239,12 @@ function App() {
                 </div>
 
                 <div className="flex items-center justify-between pt-4 border-t">
-                  <div className="flex items-center space-x-2 text-sm text-gray-600">
-                    <Globe className="w-4 h-4" />
-                    <span>Powered by Finnhub Stock API</span>
-                  </div>
+                  <div className="flex items-center space-x-3 text-sm text-gray-600">
+                      <Globe className="w-4 h-4" />
+                      <span>Powered by Finnhub Stock API</span>
+                      <span className="text-xs text-gray-400">•</span>
+                      <span>Sentiment via Hugging Face Inference API</span>
+                    </div>
                   <button
                     onClick={handleCloseAbout}
                     className="btn-primary"

@@ -3,6 +3,8 @@ const router = express.Router();
 const finnhubService = require('../services/finnhubService');
 const stockScoringService = require('../services/stockScoringService');
 const fundamentalAnalysisService = require('../services/fundamentalAnalysisService');
+const newsService = require('../services/newsService');
+const sentimentService = require('../services/sentimentService');
 
 // Search stocks
 router.get('/search', async (req, res) => {
@@ -123,6 +125,67 @@ router.get('/:symbol/history', async (req, res) => {
     });
   } catch (error) {
     console.error(`Error fetching historical data for ${req.params.symbol}:`, error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get company news with sentiment analysis
+router.get('/:symbol/news-sentiment', async (req, res) => {
+  try {
+    const symbol = req.params.symbol.toUpperCase();
+    const { days = 7 } = req.query;
+
+    console.log(`Fetching news and sentiment for ${symbol}...`);
+
+    // Get news articles
+    const newsArticles = await newsService.getCompanyNews(symbol, parseInt(days));
+    
+    if (!newsArticles || newsArticles.length === 0) {
+      return res.json({
+        symbol,
+        days: parseInt(days),
+        news: [],
+        sentiment: {
+          positive: 0,
+          neutral: 0,
+          negative: 0,
+          total: 0,
+          overall: 'neutral',
+          summary: 'No recent news available.',
+          percentages: { positive: 0, neutral: 0, negative: 0 }
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Extract headlines for sentiment analysis
+    const headlines = newsArticles.map(article => article.headline);
+    console.log(`Analyzing sentiment for ${headlines.length} headlines...`);
+
+    // Analyze sentiment for all headlines
+    const sentimentResults = await sentimentService.analyzeMultipleSentiments(headlines);
+    
+    // Combine news with sentiment
+    const newsWithSentiment = newsArticles.map((article, index) => ({
+      ...article,
+      sentiment: sentimentResults[index] || { label: 'neutral', score: 0.5, error: 'Analysis failed' }
+    }));
+
+    // Aggregate sentiment results
+    const sentimentSummary = sentimentService.aggregateSentiments(sentimentResults);
+
+    console.log(`Completed sentiment analysis for ${symbol}: ${sentimentSummary.overall}`);
+
+    res.json({
+      symbol,
+      days: parseInt(days),
+      news: newsWithSentiment,
+      sentiment: sentimentSummary,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error(`Error fetching news and sentiment for ${req.params.symbol}:`, error);
     res.status(500).json({ error: error.message });
   }
 });

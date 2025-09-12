@@ -41,12 +41,12 @@ const Header: React.FC<HeaderProps> = ({ onAboutClick, onProjectDetailsClick }) 
               About
             </button>
             <a
-              href="https://finnhub.io"
+              href="https://www.linkedin.com/in/mudit-karir"
               target="_blank"
               rel="noopener noreferrer"
               className="text-gray-600 hover:text-gray-900 transition-colors duration-200"
             >
-              Data by Finnhub
+              Mudit on LinkedIn
             </a>
           </nav>
 
