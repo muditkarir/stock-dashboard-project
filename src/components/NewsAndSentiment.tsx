@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, Minus, ExternalLink, Calendar, AlertCircle } from 'lucide-react';
+import { StockService } from '../services/api';
 
 interface NewsArticle {
   id: string | number;
@@ -50,13 +51,7 @@ const NewsAndSentiment: React.FC<NewsAndSentimentProps> = ({ symbol, className =
       setError(null);
 
       try {
-        const response = await fetch(`/api/stocks/${symbol}/news-sentiment?days=7`);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch news: ${response.status}`);
-        }
-
-        const data = await response.json();
+        const data = await StockService.getNewsAndSentiment(symbol, 7);
         setNewsData({
           news: data.news || [],
           sentiment: data.sentiment

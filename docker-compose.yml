@@ -7,7 +7,7 @@ services:
       - "5000:5000"
     environment:
       - NODE_ENV=production
-      - FINNHUB_API_KEY=${FINNHUB_API_KEY:-d327lr1r01qn0gi2pa10d327lr1r01qn0gi2pa1g}
+      - FINNHUB_API_KEY=${FINNHUB_API_KEY:-your_api_key_here}
       - FINNHUB_WEBHOOK_SECRET=${FINNHUB_WEBHOOK_SECRET:-d327lr1r01qn0gi2pa2g}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
       - PORT=5000

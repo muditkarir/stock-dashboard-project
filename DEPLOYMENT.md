@@ -22,7 +22,7 @@ The frontend will be available at `http://localhost:3000`
 
 ### Backend (.env)
 ```
-FINNHUB_API_KEY=d327lr1r01qn0gi2pa10d327lr1r01qn0gi2pa1g
+FINNHUB_API_KEY=your_actual_finnhub_api_key_here
 FINNHUB_WEBHOOK_SECRET=d327lr1r01qn0gi2pa2g
 PORT=5000
 NODE_ENV=development

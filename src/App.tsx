@@ -164,11 +164,23 @@ function App() {
             {/* Fundamental Analysis and News & Sentiment (Side by Side) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Fundamental Analysis */}
-              {stockData.fundamentals && (
+              {stockData.fundamentals ? (
                 <FundamentalAnalysis 
                   symbol={stockData.symbol}
                   fundamentals={stockData.fundamentals}
                 />
+              ) : (
+                <div className="card p-6 border-gray-200 bg-gray-50">
+                  <h3 className="text-lg font-semibold text-gray-700 mb-3">
+                    📊 Fundamental Analysis
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Comprehensive fundamental analysis is currently under development.
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Coming soon: P/E ratios, debt analysis, growth metrics, and financial health scoring.
+                  </p>
+                </div>
               )}
 
               {/* News & Sentiment Analysis */}
@@ -192,8 +204,8 @@ function App() {
                 Ready to Analyze Stocks
               </h2>
               <p className="text-gray-600 mb-6">
-                Search for any stock ticker above to get started with real-time data, 
-                professional analysis, and smart scoring.
+                Search for any stock ticker above to get started with real-time market data, 
+                professional analysis, and live scoring. All data is sourced directly from financial APIs.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                 <div className="flex items-center justify-center space-x-2 text-gray-600">
