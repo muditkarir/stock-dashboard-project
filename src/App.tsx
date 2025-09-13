@@ -46,10 +46,6 @@ function App() {
     setShowProjectDetails(true);
   };
 
-  const handleCloseProjectDetails = () => {
-    setShowProjectDetails(false);
-  };
-
   const handleCloseAbout = () => {
     setShowAbout(false);
   };
