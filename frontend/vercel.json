@@ -1,9 +1,9 @@
 {
   "functions": {
-    "api/stocks/search.ts": {
+    "api/stocks/search.js": {
       "runtime": "@vercel/node"
     },
-    "api/stocks/[symbol].ts": {
+    "api/stocks/[symbol].js": {
       "runtime": "@vercel/node"
     }
   },
@@ -11,6 +11,16 @@
     {
       "source": "/(.*)",
       "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
+      ]
     }
   ]
 }
