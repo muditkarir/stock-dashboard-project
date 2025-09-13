@@ -13,16 +13,21 @@ import {
 import { Line } from 'react-chartjs-2';
 import { HistoricalData } from '../types';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
+// Register Chart.js components with error handling
+try {
+  ChartJS.register(
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip,
+    Legend,
+    Filler
+  );
+} catch (error) {
+  console.error('Error registering Chart.js components:', error);
+}
 
 interface StockChartProps {
   symbol: string;
@@ -148,7 +153,21 @@ const StockChart: React.FC<StockChartProps> = ({ symbol, historicalData, classNa
       </div>
       
       <div className="relative h-64 sm:h-80">
-        <Line data={chartData} options={options} />
+        {React.createElement(() => {
+          try {
+            return <Line data={chartData} options={options} />;
+          } catch (error) {
+            console.error('Chart rendering error:', error);
+            return (
+              <div className="flex items-center justify-center h-full bg-gray-100 rounded">
+                <div className="text-center">
+                  <p className="text-gray-600">Chart temporarily unavailable</p>
+                  <p className="text-sm text-gray-500 mt-2">Using fallback display</p>
+                </div>
+              </div>
+            );
+          }
+        })}
       </div>
       
       <div className="mt-4 flex items-center justify-between text-sm text-gray-600">

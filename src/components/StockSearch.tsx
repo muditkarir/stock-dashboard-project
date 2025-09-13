@@ -85,6 +85,9 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect, isLoading }) =
   const handleInputFocus = () => {
     if (query.length >= 2 && results) {
       setShowResults(true);
+    } else if (!query) {
+      // Show popular stocks when focusing empty search
+      setShowResults(true);
     }
   };
 

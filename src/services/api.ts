@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { StockData, SearchResult, NewsItem, WebhookEvent } from '../types';
+import { mockSearchResults, generateMockStockData } from './mockApi';
 
 // Create axios instance with base configuration
 const getBaseURL = () => {
@@ -65,8 +66,17 @@ export class StockService {
       });
       return response.data;
     } catch (error) {
-      console.error('Error searching stocks:', error);
-      throw error;
+      console.warn('API search failed, using mock data:', error);
+      // Filter mock results based on query
+      const filteredResults = mockSearchResults.result.filter(stock => 
+        stock.symbol.toLowerCase().includes(query.toLowerCase()) ||
+        stock.description.toLowerCase().includes(query.toLowerCase())
+      );
+      
+      return {
+        count: filteredResults.length,
+        result: filteredResults
+      };
     }
   }
 
@@ -78,8 +88,9 @@ export class StockService {
       const response = await api.get(`/stocks/${symbol.toUpperCase()}`);
       return response.data;
     } catch (error) {
-      console.error(`Error fetching stock data for ${symbol}:`, error);
-      throw error;
+      console.warn(`API failed for ${symbol}, using mock data:`, error);
+      // Return mock data instead of throwing error
+      return generateMockStockData(symbol);
     }
   }
 

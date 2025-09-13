@@ -18,7 +18,6 @@ function App() {
   });
   const [showAbout, setShowAbout] = useState(false);
   const [showProjectDetails, setShowProjectDetails] = useState(false);
-  const [hasError, setHasError] = useState(false);
 
   const handleStockSelect = useCallback(async (symbol: string) => {
     setLoadingState({ isLoading: true, error: null });
@@ -46,53 +45,9 @@ function App() {
     setShowProjectDetails(true);
   };
 
-  const handleCloseProjectDetails = () => {
-    setShowProjectDetails(false);
-  };
-
   const handleCloseAbout = () => {
     setShowAbout(false);
   };
-
-  // Error boundary effect
-  React.useEffect(() => {
-    const handleError = (error: any) => {
-      console.error('App Error:', error);
-      setHasError(true);
-    };
-    
-    window.addEventListener('error', handleError);
-    window.addEventListener('unhandledrejection', handleError);
-    
-    return () => {
-      window.removeEventListener('error', handleError);
-      window.removeEventListener('unhandledrejection', handleError);
-    };
-  }, []);
-
-  // Error fallback
-  if (hasError) {
-    return (
-      <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif', textAlign: 'center' }}>
-        <h1 style={{ color: '#dc2626' }}>Something went wrong</h1>
-        <p>The app encountered an error. Please refresh the page to try again.</p>
-        <button 
-          onClick={() => window.location.reload()} 
-          style={{ 
-            background: '#3b82f6', 
-            color: 'white', 
-            border: 'none', 
-            padding: '10px 20px',
-            borderRadius: '5px',
-            cursor: 'pointer',
-            marginTop: '10px'
-          }}
-        >
-          Refresh Page
-        </button>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
