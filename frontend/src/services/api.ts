@@ -4,7 +4,7 @@ import { StockData, SearchResult, NewsItem, WebhookEvent } from '../types';
 // Create axios instance with base configuration
 const getBaseURL = () => {
   if (process.env.NODE_ENV === 'production') {
-    // In production, use the current domain for API calls
+    // In production, disable API calls for now to test frontend deployment
     return '/api';
   }
   // In development, use localhost backend
