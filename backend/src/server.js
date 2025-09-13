@@ -61,11 +61,31 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
+// Add process error handlers
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
+
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', (err) => {
+  if (err) {
+    console.error('Error starting server:', err);
+    process.exit(1);
+  }
   console.log(`🚀 Stock Dashboard Backend running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:3000'}`);
+  
+  // Add heartbeat to confirm server stays alive
+  setInterval(() => {
+    console.log('Server heartbeat:', new Date().toISOString());
+  }, 10000);
 });
 
 module.exports = app;
