@@ -4,6 +4,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Production build
+build/
+
 # Environment variables
 .env
 .env.local
@@ -11,28 +14,9 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
-# Logs
-logs
-*.log
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage directory used by tools like istanbul
-coverage/
-
-# Build directories
-build/
-dist/
-
 # IDE files
 .vscode/
 .idea/
-*.swp
-*.swo
 
 # OS generated files
 .DS_Store
