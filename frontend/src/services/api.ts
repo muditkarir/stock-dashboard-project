@@ -3,7 +3,9 @@ import { StockData, SearchResult, NewsItem, WebhookEvent } from '../types';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: process.env.NODE_ENV === 'production' 
+    ? process.env.REACT_APP_API_URL || 'https://your-backend-url.vercel.app/api'
+    : '/api',
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
