@@ -25,7 +25,6 @@ export class StockAnalyzer {
     // Extract key financial metrics from profile
     const marketCap = profile.marketCapitalization || 0;
     const shares = profile.shareOutstanding || 1;
-    const currentPrice = quote.c || 0;
     
     // Calculate basic ratios using available data
     const peRatio = this.estimatePERatio(quote, profile);
