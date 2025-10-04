@@ -4,8 +4,8 @@ export class StockAnalyzer {
   /**
    * Calculate comprehensive stock scoring based on real market data
    */
-  static calculateStockScore(quote: StockQuote, symbol: string): StockScore {
-    const breakdown = this.calculateBreakdown(quote);
+  static calculateStockScore(quote: StockQuote, profile: CompanyProfile | null, symbol: string): StockScore {
+    const breakdown = this.calculateBreakdown(quote, profile);
     const overallScore = this.calculateOverallScore(breakdown);
     
     return {
@@ -112,29 +112,29 @@ export class StockAnalyzer {
   /**
    * Calculate individual scoring metrics
    */
-  private static calculateBreakdown(quote: StockQuote) {
+  private static calculateBreakdown(quote: StockQuote, profile: CompanyProfile | null) {
     return {
       price: this.calculatePricePerformance(quote),
       momentum: this.calculateMomentum(quote),
       volatility: this.calculateVolatility(quote),
-      market: this.calculateMarketSentiment(quote),
-      trend: this.calculateTrend(quote)
+      market: this.calculateMarketCap(profile),
+      trend: this.calculateHistoricalTrend(quote)
     };
   }
 
   /**
-   * Price Performance: Based on daily change percentage
-   * Formula: Normalized daily change performance (-5% to +5% mapped to 0-100)
+   * Price Performance: Based on daily change percentage with thresholds
+   * Formula: >5% = 90pts, >2% = 80pts, >0% = 65pts, >-2% = 35pts, >-5% = 20pts, else 10pts
    */
   private static calculatePricePerformance(quote: StockQuote): number {
     const changePercent = quote.dp || 0; // Daily percentage change
     
-    // Normalize -5% to +5% range to 0-100 scale
-    // 0% change = 50 points, +5% = 100 points, -5% = 0 points
-    let score = 50 + (changePercent * 10);
-    
-    // Cap between 0 and 100
-    return Math.max(0, Math.min(100, Math.round(score)));
+    if (changePercent > 5) return 90;
+    if (changePercent > 2) return 80;
+    if (changePercent > 0) return 65;
+    if (changePercent > -2) return 35;
+    if (changePercent > -5) return 20;
+    return 10;
   }
 
   /**
@@ -153,40 +153,44 @@ export class StockAnalyzer {
   }
 
   /**
-   * Volatility: Based on daily price range (lower volatility = higher score)
-   * Formula: 100 - ((high - low) / current * 100) * 10
+   * Volatility: Based on daily price range as percentage of previous close
+   * Formula: Thresholds based on (High-Low)/Previous Close
+   * <1% = 80pts, <2% = 70pts, <3% = 60pts, <5% = 40pts, <8% = 25pts, else 10pts
    */
   private static calculateVolatility(quote: StockQuote): number {
-    const current = quote.c || 0;
-    const high = quote.h || current;
-    const low = quote.l || current;
-    
-    if (current === 0) return 50;
-    
-    // Calculate volatility as percentage of current price
-    const volatilityPercent = ((high - low) / current) * 100;
-    
-    // Lower volatility gets higher score (inverse relationship)
-    const score = 100 - (volatilityPercent * 10);
-    return Math.max(0, Math.min(100, Math.round(score)));
-  }
-
-  /**
-   * Market Sentiment: Based on current vs previous close performance
-   * Formula: ((current - previousClose) / previousClose) normalized to 0-100
-   */
-  private static calculateMarketSentiment(quote: StockQuote): number {
-    const current = quote.c || 0;
-    const previousClose = quote.pc || current;
+    const previousClose = quote.pc || quote.c || 0;
+    const high = quote.h || previousClose;
+    const low = quote.l || previousClose;
     
     if (previousClose === 0) return 50;
     
-    const changePercent = ((current - previousClose) / previousClose) * 100;
+    // Calculate volatility as percentage of previous close
+    const volatilityPercent = ((high - low) / previousClose) * 100;
     
-    // Map -3% to +3% change to 0-100 scale (more sensitive than price performance)
-    let score = 50 + (changePercent * 16.67); // 100/6 = 16.67
+    if (volatilityPercent < 1) return 80;
+    if (volatilityPercent < 2) return 70;
+    if (volatilityPercent < 3) return 60;
+    if (volatilityPercent < 5) return 40;
+    if (volatilityPercent < 8) return 25;
+    return 10;
+  }
+
+  /**
+   * Market Cap Score: Based on company size tiers
+   * Formula: Large cap > $200B = 90pts, > $50B = 80pts, > $10B = 65pts, > $2B = 50pts, > $300M = 35pts, else 20pts
+   */
+  private static calculateMarketCap(profile: CompanyProfile | null): number {
+    const marketCap = profile?.marketCapitalization || 0;
     
-    return Math.max(0, Math.min(100, Math.round(score)));
+    // Convert billions to dollars (marketCapitalization is in billions)
+    const marketCapInDollars = marketCap * 1e9;
+    
+    if (marketCapInDollars > 200e9) return 90; // > $200B
+    if (marketCapInDollars > 50e9) return 80;  // > $50B
+    if (marketCapInDollars > 10e9) return 65;  // > $10B
+    if (marketCapInDollars > 2e9) return 50;   // > $2B
+    if (marketCapInDollars > 300e6) return 35; // > $300M
+    return 20;
   }
 
   /**

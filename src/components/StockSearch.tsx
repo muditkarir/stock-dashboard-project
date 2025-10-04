@@ -69,9 +69,10 @@ const StockSearch: React.FC<StockSearchProps> = ({ onStockSelect, isLoading }) =
 
   const handleStockSelect = (symbol: string) => {
     setQuery(symbol);
-    setShowResults(false);
-    onStockSelect(symbol);
-    inputRef.current?.blur();
+    setShowResults(false); // Close the dropdown
+    setResults(null); // Clear the results
+    inputRef.current?.blur(); // Remove focus from input
+    onStockSelect(symbol); // Call the parent handler
   };
 
   const handleClearSearch = () => {
