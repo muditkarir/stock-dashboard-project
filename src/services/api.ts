@@ -153,7 +153,7 @@ export class StockService {
               symbol: symbol.toUpperCase(),
               quote: quote,
               profile: profile,
-              scoring: StockAnalyzer.calculateStockScore(quote, symbol.toUpperCase()),
+              scoring: StockAnalyzer.calculateStockScore(quote, profile, symbol.toUpperCase()),
               fundamentals: StockAnalyzer.calculateFundamentalAnalysis(quote, profile, symbol.toUpperCase()),
               historical: null, // Historical data requires additional API calls
               timestamp: new Date().toISOString()

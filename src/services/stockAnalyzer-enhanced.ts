@@ -118,7 +118,7 @@ export class StockAnalyzer {
       momentum: this.calculateMomentum(quote),
       volatility: this.calculateVolatility(quote),
       market: this.calculateMarketCap(profile),
-      trend: this.calculateHistoricalTrend(quote)
+      trend: this.calculateTrend(quote)
     };
   }
 
