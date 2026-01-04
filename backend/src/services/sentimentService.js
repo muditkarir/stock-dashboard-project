@@ -1,10 +1,11 @@
 const axios = require('axios');
 
-const HF_TOKEN = process.env.HUGGINGFACE_TOKEN;
-const SENTIMENT_MODEL_URL = 'https://api-inference.huggingface.co/models/nlptown/bert-base-multilingual-uncased-sentiment';
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+const MODEL = 'meta-llama/llama-3.1-8b-instruct:free'; // Free model
 
 /**
- * Analyze sentiment of a text using FinBERT model
+ * Analyze sentiment of a text using OpenRouter (Llama 3.1 free model)
  * @param {string} text - Text to analyze
  * @returns {Promise<object>} Sentiment analysis result
  */
@@ -14,42 +15,53 @@ async function analyzeSentiment(text) {
       return { label: 'neutral', score: 0.5, error: 'Empty text' };
     }
 
-    const response = await axios.post(SENTIMENT_MODEL_URL, {
-      inputs: text
-    }, {
-      headers: {
-        'Authorization': `Bearer ${HF_TOKEN}`,
-        'Content-Type': 'application/json'
-      },
-      timeout: 30000 // 30 second timeout for AI processing
-    });
-
-    // RoBERTa sentiment model typically returns array of classification results
-    if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-      // Get the prediction with highest score
-      const predictions = response.data[0];
-      const topPrediction = predictions.reduce((max, pred) => 
-        pred.score > max.score ? pred : max
-      );
-
-      return {
-        label: mapRoBERTaLabel(topPrediction.label),
-        score: topPrediction.score,
-        rawPredictions: predictions
-      };
+    if (!OPENROUTER_API_KEY) {
+      console.warn('OPENROUTER_API_KEY not configured, defaulting to neutral sentiment');
+      return { label: 'neutral', score: 0.5, error: 'API key not configured' };
     }
 
-    // Fallback for unexpected response format
-    console.warn('Unexpected sentiment response format:', response.data);
-    return { label: 'neutral', score: 0.5, error: 'Unexpected response format' };
+    const response = await axios.post(OPENROUTER_API_URL, {
+      model: MODEL,
+      messages: [
+        {
+          role: 'user',
+          content: `Analyze the sentiment of this financial news headline. Respond with ONLY ONE WORD: positive, negative, or neutral.\n\nHeadline: "${text}"`
+        }
+      ],
+      max_tokens: 10,
+      temperature: 0.3
+    }, {
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://stock-dashboard.vercel.app',
+        'X-Title': 'Stock Dashboard'
+      },
+      timeout: 15000
+    });
+
+    const sentiment = response.data.choices[0]?.message?.content?.trim().toLowerCase();
+    
+    // Map response to sentiment
+    let label = 'neutral';
+    let score = 0.5;
+    
+    if (sentiment?.includes('positive')) {
+      label = 'positive';
+      score = 0.8;
+    } else if (sentiment?.includes('negative')) {
+      label = 'negative';
+      score = 0.2;
+    }
+
+    return { label, score };
 
   } catch (error) {
     console.error('Sentiment analysis error:', error.message);
     
-    // Handle specific error cases
     if (error.response) {
       console.error('Response status:', error.response.status);
-      console.error('Response data:', error.response.data);
+      console.error('Response data:', JSON.stringify(error.response.data));
       
       if (error.response.status === 429) {
         return { label: 'neutral', score: 0.5, error: 'Rate limit exceeded' };
@@ -58,20 +70,6 @@ async function analyzeSentiment(text) {
     
     return { label: 'neutral', score: 0.5, error: error.message };
   }
-}
-
-/**
- * Map BERT sentiment labels to simplified sentiment labels
- * @param {string} label - Original BERT label (1-5 stars)
- * @returns {string} Simplified sentiment label
- */
-function mapRoBERTaLabel(label) {
-  const lowerLabel = label.toLowerCase();
-  
-  // This model returns star ratings - map them to sentiment
-  if (lowerLabel.includes('5 stars') || lowerLabel.includes('4 stars')) return 'positive';
-  if (lowerLabel.includes('1 star') || lowerLabel.includes('2 stars')) return 'negative';
-  return 'neutral'; // 3 stars or anything else
 }
 
 /**
