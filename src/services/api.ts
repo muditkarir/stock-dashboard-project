@@ -11,15 +11,18 @@ const API_CONFIG = {
 
 // Create axios instance with base configuration
 const getBaseURL = () => {
-  if (API_CONFIG.environment === 'production' && !API_CONFIG.finnhubApiKey) {
-    // In production without API keys, use mock data only
-    return '/api'; // This will fail, triggering mock fallback
-  }
-  if (API_CONFIG.environment === 'production') {
-    // In production with API keys, use direct API calls
+  // Check if we're in a browser and on a production domain
+  const isProduction = typeof window !== 'undefined' && 
+    (window.location.hostname.includes('vercel.app') || 
+     window.location.hostname !== 'localhost');
+  
+  if (isProduction) {
+    // In production (Vercel), always use Finnhub directly
+    // The backend API doesn't exist in Vercel deployment
     return 'https://finnhub.io/api/v1';
   }
-  // In development, try localhost backend first, fallback to direct API
+  
+  // In development, try localhost backend first
   return 'http://localhost:5000/api';
 };
 
@@ -81,32 +84,36 @@ export class StockService {
       return { count: 0, result: [] };
     }
 
+    // Check if we're in production (Vercel)
+    const isProduction = typeof window !== 'undefined' && 
+      (window.location.hostname.includes('vercel.app') || 
+       window.location.hostname !== 'localhost');
+
+    // In production or if API key is available, use direct Finnhub calls
+    if (isProduction || API_CONFIG.finnhubApiKey) {
+      try {
+        console.log(`🔍 Searching directly via Finnhub: ${query}`);
+        const response = await directApi.get('/search', {
+          params: { 
+            q: query,
+            token: API_CONFIG.finnhubApiKey 
+          }
+        });
+        return response.data;
+      } catch (directError) {
+        console.error('Direct search API failed:', directError);
+        throw new Error(`Search failed: Unable to connect to stock data service. Please check your internet connection and API configuration.`);
+      }
+    }
+
+    // Try backend API (development only)
     try {
-      // First try backend API
       const response = await api.get(`/stocks/search`, {
         params: { q: query }
       });
       return response.data;
     } catch (backendError) {
-      console.warn('Backend API failed, trying direct API call:', backendError);
-      
-      // If backend fails and we have API key, try direct call to Finnhub
-      if (API_CONFIG.finnhubApiKey) {
-        try {
-          const response = await directApi.get('/search', {
-            params: { 
-              q: query,
-              token: API_CONFIG.finnhubApiKey 
-            }
-          });
-          return response.data;
-        } catch (directError) {
-          console.error('Direct API also failed:', directError);
-          throw new Error(`Search failed: Unable to connect to stock data service. Please check your internet connection and API configuration.`);
-        }
-      }
-      
-      // No API key available
+      console.error('Backend search API failed:', backendError);
       throw new Error('Stock search is unavailable: No API key configured. Please add your Finnhub API key to environment variables.');
     }
   }
@@ -115,59 +122,73 @@ export class StockService {
    * Get comprehensive stock data including quote, profile, and scoring
    */
   static async getStockData(symbol: string): Promise<StockData> {
+    // Check if we're in production (Vercel)
+    const isProduction = typeof window !== 'undefined' && 
+      (window.location.hostname.includes('vercel.app') || 
+       window.location.hostname !== 'localhost');
+    
+    // In production or if API key is available, use direct Finnhub calls
+    if (isProduction || API_CONFIG.finnhubApiKey) {
+      try {
+        console.log(`🔍 Fetching data directly from Finnhub for ${symbol}...`);
+        
+        // Get quote and profile directly from Finnhub
+        const [quoteResponse, profileResponse] = await Promise.allSettled([
+          directApi.get('/quote', {
+            params: { symbol: symbol.toUpperCase(), token: API_CONFIG.finnhubApiKey }
+          }),
+          directApi.get('/stock/profile2', {
+            params: { symbol: symbol.toUpperCase(), token: API_CONFIG.finnhubApiKey }
+          })
+        ]);
+
+        if (quoteResponse.status === 'fulfilled' && profileResponse.status === 'fulfilled') {
+          // Build StockData from direct API responses
+          const quote = quoteResponse.value.data;
+          const profile = profileResponse.value.data;
+          
+          // Validate that we got valid data
+          if (!quote || quote.c === undefined || quote.c === 0) {
+            throw new Error(`No quote data available for ${symbol}. The symbol may be invalid or markets may be closed.`);
+          }
+          
+          if (!profile || !profile.name) {
+            throw new Error(`No company profile found for ${symbol}. Please verify the stock symbol is correct.`);
+          }
+          
+          console.log(`✅ Successfully fetched data for ${symbol}, calculating scores...`);
+          
+          // IMPORTANT: Calculate scoring and fundamentals here
+          const scoring = StockAnalyzer.calculateStockScore(quote, profile, symbol.toUpperCase());
+          const fundamentals = StockAnalyzer.calculateFundamentalAnalysis(quote, profile, symbol.toUpperCase());
+          
+          console.log(`📊 Calculations complete - Score: ${scoring.score}/100`, scoring);
+          
+          return {
+            symbol: symbol.toUpperCase(),
+            quote: quote,
+            profile: profile,
+            scoring: scoring,
+            fundamentals: fundamentals,
+            historical: null, // Historical data requires additional API calls
+            timestamp: new Date().toISOString()
+          };
+        } else {
+          throw new Error(`Failed to retrieve complete data for ${symbol}. API response was incomplete.`);
+        }
+      } catch (directError) {
+        console.error('❌ Direct API calls failed:', directError);
+        throw new Error(`Unable to fetch data for ${symbol}: ${directError instanceof Error ? directError.message : 'API connection failed'}`);
+      }
+    }
+    
+    // Try backend API (development only)
     try {
-      // First try backend API
+      console.log(`🔍 Attempting backend API for ${symbol}...`);
       const response = await api.get(`/stocks/${symbol.toUpperCase()}`);
       return response.data;
     } catch (backendError) {
-      console.warn(`Backend API failed for ${symbol}, trying direct API:`, backendError);
-      
-      // If backend fails and we have API key, try direct calls to Finnhub
-      if (API_CONFIG.finnhubApiKey) {
-        try {
-          // Get quote and profile directly from Finnhub
-          const [quoteResponse, profileResponse] = await Promise.allSettled([
-            directApi.get('/quote', {
-              params: { symbol: symbol.toUpperCase(), token: API_CONFIG.finnhubApiKey }
-            }),
-            directApi.get('/stock/profile2', {
-              params: { symbol: symbol.toUpperCase(), token: API_CONFIG.finnhubApiKey }
-            })
-          ]);
-
-          if (quoteResponse.status === 'fulfilled' && profileResponse.status === 'fulfilled') {
-            // Build StockData from direct API responses
-            const quote = quoteResponse.value.data;
-            const profile = profileResponse.value.data;
-            
-            // Validate that we got valid data
-            if (!quote || quote.c === undefined || quote.c === 0) {
-              throw new Error(`No quote data available for ${symbol}. The symbol may be invalid or markets may be closed.`);
-            }
-            
-            if (!profile || !profile.name) {
-              throw new Error(`No company profile found for ${symbol}. Please verify the stock symbol is correct.`);
-            }
-            
-            return {
-              symbol: symbol.toUpperCase(),
-              quote: quote,
-              profile: profile,
-              scoring: StockAnalyzer.calculateStockScore(quote, profile, symbol.toUpperCase()),
-              fundamentals: StockAnalyzer.calculateFundamentalAnalysis(quote, profile, symbol.toUpperCase()),
-              historical: null, // Historical data requires additional API calls
-              timestamp: new Date().toISOString()
-            };
-          } else {
-            throw new Error(`Failed to retrieve complete data for ${symbol}. API response was incomplete.`);
-          }
-        } catch (directError) {
-          console.error('Direct API calls failed:', directError);
-          throw new Error(`Unable to fetch data for ${symbol}: ${directError instanceof Error ? directError.message : 'API connection failed'}`);
-        }
-      }
-      
-      // No API key available
+      console.error(`❌ Backend API failed for ${symbol}:`, backendError);
       throw new Error(`Stock data unavailable for ${symbol}: No API key configured. Please add your Finnhub API key to access live market data.`);
     }
   }
