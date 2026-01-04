@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import Header from './components/Header';
 import ProjectDetails from './components/ProjectDetails';
 import StockSearch from './components/StockSearch';
@@ -19,6 +19,16 @@ function App() {
   const [showAbout, setShowAbout] = useState(false);
   const [showProjectDetails, setShowProjectDetails] = useState(false);
   const [hasError, setHasError] = useState(false);
+  
+  // Initialize active tab based on URL path
+  const getInitialTab = (): 'app' | 'projectDetails' | 'about' => {
+    const path = window.location.pathname;
+    if (path === '/project-details') return 'projectDetails';
+    if (path === '/about') return 'about';
+    return 'app';
+  };
+  
+  const [activeTab, setActiveTab] = useState<'app' | 'projectDetails' | 'about'>(getInitialTab());
 
   const handleStockSelect = useCallback(async (symbol: string) => {
     setLoadingState({ isLoading: true, error: null });
@@ -40,15 +50,81 @@ function App() {
 
   const handleAboutClick = () => {
     setShowAbout(true);
+    setShowProjectDetails(false);
+    setActiveTab('about');
+    window.history.pushState({}, '', '/about');
+    document.title = 'About - Stock Dashboard';
   };
 
   const handleProjectDetailsClick = () => {
     setShowProjectDetails(true);
+    setShowAbout(false);
+    setActiveTab('projectDetails');
+    window.history.pushState({}, '', '/project-details');
+    document.title = 'Project Details - Stock Dashboard';
+  };
+
+  const handleAppClick = () => {
+    setShowAbout(false);
+    setShowProjectDetails(false);
+    setActiveTab('app');
+    window.history.pushState({}, '', '/');
+    document.title = 'Stock Dashboard - Smart Market Analysis';
   };
 
   const handleCloseAbout = () => {
     setShowAbout(false);
+    setActiveTab('app');
+    window.history.pushState({}, '', '/');
+    document.title = 'Stock Dashboard - Smart Market Analysis';
   };
+
+  // Initialize state based on URL on mount
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path === '/project-details') {
+      setShowProjectDetails(true);
+      setShowAbout(false);
+      setActiveTab('projectDetails');
+      document.title = 'Project Details - Stock Dashboard';
+    } else if (path === '/about') {
+      setShowAbout(true);
+      setShowProjectDetails(false);
+      setActiveTab('about');
+      document.title = 'About - Stock Dashboard';
+    } else {
+      setShowAbout(false);
+      setShowProjectDetails(false);
+      setActiveTab('app');
+      document.title = 'Stock Dashboard - Smart Market Analysis';
+    }
+  }, []);
+
+  // Handle browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      if (path === '/project-details') {
+        setShowProjectDetails(true);
+        setShowAbout(false);
+        setActiveTab('projectDetails');
+        document.title = 'Project Details - Stock Dashboard';
+      } else if (path === '/about') {
+        setShowAbout(true);
+        setShowProjectDetails(false);
+        setActiveTab('about');
+        document.title = 'About - Stock Dashboard';
+      } else {
+        setShowAbout(false);
+        setShowProjectDetails(false);
+        setActiveTab('app');
+        document.title = 'Stock Dashboard - Smart Market Analysis';
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Error boundary effect
   React.useEffect(() => {
@@ -92,10 +168,18 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header onAboutClick={handleAboutClick} onProjectDetailsClick={handleProjectDetailsClick} />
+      <Header 
+        onAboutClick={handleAboutClick} 
+        onProjectDetailsClick={handleProjectDetailsClick}
+        onAppClick={handleAppClick}
+        activeTab={activeTab}
+      />
 
       {showProjectDetails ? (
-        <ProjectDetails onClose={() => setShowProjectDetails(false)} />
+        <ProjectDetails onClose={() => {
+          setShowProjectDetails(false);
+          setActiveTab('app');
+        }} />
       ) : (
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
