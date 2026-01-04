@@ -42,6 +42,7 @@ const NewsAndSentiment: React.FC<NewsAndSentimentProps> = ({ symbol, className =
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showAllNews, setShowAllNews] = useState(false);
 
   useEffect(() => {
     const fetchNewsAndSentiment = async () => {
@@ -178,7 +179,7 @@ const NewsAndSentiment: React.FC<NewsAndSentimentProps> = ({ symbol, className =
       {/* News Headlines */}
       <div className="space-y-4">
         {news.length > 0 ? (
-          news.slice(0, 5).map((article) => (
+          news.slice(0, showAllNews ? news.length : 5).map((article) => (
             <div key={article.id} className="border-b border-gray-100 pb-3 last:border-b-0 last:pb-0">
               <div className="flex items-start gap-3">
                 <div className="mt-1 flex-shrink-0">
@@ -234,8 +235,14 @@ const NewsAndSentiment: React.FC<NewsAndSentimentProps> = ({ symbol, className =
 
       {news.length > 5 && (
         <div className="mt-4 pt-3 border-t border-gray-100">
-          <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-            View {news.length - 5} more articles →
+          <button 
+            onClick={() => setShowAllNews(!showAllNews)}
+            className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+          >
+            {showAllNews 
+              ? '← Show less' 
+              : `View ${news.length - 5} more articles →`
+            }
           </button>
         </div>
       )}
