@@ -8,14 +8,58 @@ export class StockAnalyzer {
     const breakdown = this.calculateBreakdown(quote, profile);
     const overallScore = this.calculateOverallScore(breakdown);
     
+    // Generate calculation details for the UI
+    const calculationDetails = {
+      price: {
+        currentPrice: quote.c.toFixed(2),
+        previousClose: quote.pc.toFixed(2),
+        changeAmount: quote.d.toFixed(2),
+        changePercent: quote.dp.toFixed(2)
+      },
+      momentum: {
+        currentPrice: quote.c.toFixed(2),
+        dailyLow: quote.l.toFixed(2),
+        dailyHigh: quote.h.toFixed(2),
+        positionInRange: breakdown.momentum.toFixed(1)
+      },
+      volatility: {
+        dailyHigh: quote.h.toFixed(2),
+        dailyLow: quote.l.toFixed(2),
+        previousClose: quote.pc.toFixed(2),
+        rangePercent: (((quote.h - quote.l) / quote.pc) * 100).toFixed(2)
+      },
+      market: {
+        marketCap: profile?.marketCapitalization ? `$${profile.marketCapitalization.toFixed(1)}B` : 'N/A',
+        tier: this.getMarketCapTier(profile?.marketCapitalization || 0)
+      },
+      trend: {
+        error: 'Historical data required for trend calculation. Score based on intraday performance.'
+      }
+    };
+    
     return {
       score: overallScore,
       label: this.getScoreLabel(overallScore),
       color: this.getScoreColor(overallScore),
       breakdown,
+      calculationDetails,
       explanation: this.generateExplanation(breakdown, symbol),
       recommendation: this.generateRecommendation(overallScore, breakdown)
     };
+  }
+
+  /**
+   * Get market cap tier name
+   */
+  private static getMarketCapTier(marketCap: number): string {
+    const marketCapInDollars = marketCap * 1e9;
+    
+    if (marketCapInDollars > 200e9) return 'Mega Cap (>$200B)';
+    if (marketCapInDollars > 50e9) return 'Large Cap ($50B-$200B)';
+    if (marketCapInDollars > 10e9) return 'Large Cap ($10B-$50B)';
+    if (marketCapInDollars > 2e9) return 'Mid Cap ($2B-$10B)';
+    if (marketCapInDollars > 300e6) return 'Small Cap ($300M-$2B)';
+    return 'Micro Cap (<$300M)';
   }
 
   /**
