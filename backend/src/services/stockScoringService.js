@@ -36,6 +36,12 @@ class StockScoringService {
         const trendData = this.calculateTrendScoreWithDetails(historicalData);
         scores.trend = trendData.score;
         calculationDetails.trend = trendData.details;
+      } else {
+        // Always include trend score even when data is unavailable
+        scores.trend = 50; // Neutral score
+        calculationDetails.trend = { 
+          error: 'Historical data not available from Finnhub free tier. Upgrade to access trend analysis or use alternative data source.' 
+        };
       }
 
       // Calculate weighted average

@@ -170,10 +170,20 @@ const ScoreBreakdown: React.FC<ScoreBreakdownProps> = ({ breakdown, calculationD
               </div>
 
               {/* Real Calculation Values */}
-              {calculationDetails && calculationDetails[selectedMetric] && !calculationDetails[selectedMetric].error && (
-                <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200">
-                  <p className="font-semibold text-emerald-800 text-sm mb-2">✅ Actual Values Used:</p>
-                  <div className="space-y-1 text-sm">
+              {calculationDetails && calculationDetails[selectedMetric] && (
+                <>
+                  {calculationDetails[selectedMetric].error ? (
+                    <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
+                      <p className="font-semibold text-amber-800 text-sm mb-2">⚠️ Data Status:</p>
+                      <p className="text-sm text-amber-700">{calculationDetails[selectedMetric].error}</p>
+                      <p className="text-xs text-amber-600 mt-2">
+                        This metric requires sufficient historical data to calculate. The system will use a default neutral score until more data becomes available.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200">
+                      <p className="font-semibold text-emerald-800 text-sm mb-2">✅ Actual Values Used:</p>
+                      <div className="space-y-1 text-sm">
                     {selectedMetric === 'trend' && calculationDetails.trend && (
                       <>
                         <div className="flex justify-between text-emerald-700">
@@ -271,6 +281,8 @@ const ScoreBreakdown: React.FC<ScoreBreakdownProps> = ({ breakdown, calculationD
                     )}
                   </div>
                 </div>
+                  )}
+                </>
               )}
             </div>
             

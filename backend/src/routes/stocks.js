@@ -51,6 +51,11 @@ router.get('/:symbol', async (req, res) => {
     let historicalData = null;
     try {
       historicalData = await finnhubService.getHistoricalData(symbol, 'D', from, to);
+      console.log(`Historical data for ${symbol}:`, {
+        status: historicalData?.s,
+        dataPoints: historicalData?.c?.length || 0,
+        hasData: historicalData && historicalData.s === 'ok'
+      });
     } catch (error) {
       console.warn(`Historical data unavailable for ${symbol}:`, error.message);
     }
