@@ -181,7 +181,10 @@ const StockCard: React.FC<StockCardProps> = ({ stockData }) => {
         {/* Score Breakdown */}
         {Object.keys(scoring.breakdown).length > 0 && (
           <div className="mt-4">
-            <ScoreBreakdown breakdown={scoring.breakdown} />
+            <ScoreBreakdown 
+              breakdown={scoring.breakdown} 
+              calculationDetails={scoring.calculationDetails}
+            />
           </div>
         )}
       </div>

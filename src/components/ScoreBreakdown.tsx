@@ -3,6 +3,7 @@ import { Info, TrendingUp, TrendingDown, Activity, ChevronDown, ChevronUp } from
 
 interface ScoreBreakdownProps {
   breakdown: Record<string, number>;
+  calculationDetails?: Record<string, any>;
   className?: string;
 }
 
@@ -55,7 +56,7 @@ const SCORING_METHODOLOGY = {
   }
 };
 
-const ScoreBreakdown: React.FC<ScoreBreakdownProps> = ({ breakdown, className = '' }) => {
+const ScoreBreakdown: React.FC<ScoreBreakdownProps> = ({ breakdown, calculationDetails, className = '' }) => {
   const [expandedDetails, setExpandedDetails] = useState(false);
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
 
@@ -167,6 +168,110 @@ const ScoreBreakdown: React.FC<ScoreBreakdownProps> = ({ breakdown, className = 
                   {SCORING_METHODOLOGY[selectedMetric as keyof typeof SCORING_METHODOLOGY].calculation}
                 </div>
               </div>
+
+              {/* Real Calculation Values */}
+              {calculationDetails && calculationDetails[selectedMetric] && !calculationDetails[selectedMetric].error && (
+                <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200">
+                  <p className="font-semibold text-emerald-800 text-sm mb-2">✅ Actual Values Used:</p>
+                  <div className="space-y-1 text-sm">
+                    {selectedMetric === 'trend' && calculationDetails.trend && (
+                      <>
+                        <div className="flex justify-between text-emerald-700">
+                          <span>Recent 5-day avg:</span>
+                          <span className="font-mono font-semibold">${calculationDetails.trend.recentAvg}</span>
+                        </div>
+                        <div className="flex justify-between text-emerald-700">
+                          <span>Older 5-day avg (15-20d ago):</span>
+                          <span className="font-mono font-semibold">${calculationDetails.trend.olderAvg}</span>
+                        </div>
+                        <div className="flex justify-between text-emerald-800 font-semibold pt-1 border-t border-emerald-300">
+                          <span>Trend change:</span>
+                          <span className={`font-mono ${parseFloat(calculationDetails.trend.trendPercent) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {parseFloat(calculationDetails.trend.trendPercent) > 0 ? '+' : ''}{calculationDetails.trend.trendPercent}%
+                          </span>
+                        </div>
+                        <div className="text-xs text-emerald-600 pt-1">
+                          Direction: <span className="font-semibold capitalize">{calculationDetails.trend.direction}</span>
+                        </div>
+                      </>
+                    )}
+                    {selectedMetric === 'price' && calculationDetails.price && (
+                      <>
+                        <div className="flex justify-between text-emerald-700">
+                          <span>Current price:</span>
+                          <span className="font-mono font-semibold">${calculationDetails.price.currentPrice}</span>
+                        </div>
+                        <div className="flex justify-between text-emerald-700">
+                          <span>Previous close:</span>
+                          <span className="font-mono font-semibold">${calculationDetails.price.previousClose}</span>
+                        </div>
+                        <div className="flex justify-between text-emerald-800 font-semibold pt-1 border-t border-emerald-300">
+                          <span>Daily change:</span>
+                          <span className={`font-mono ${parseFloat(calculationDetails.price.changePercent) > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {parseFloat(calculationDetails.price.changePercent) > 0 ? '+' : ''}{calculationDetails.price.changePercent}% (${calculationDetails.price.changeAmount})
+                          </span>
+                        </div>
+                      </>
+                    )}
+                    {selectedMetric === 'momentum' && calculationDetails.momentum && (
+                      <>
+                        <div className="flex justify-between text-emerald-700">
+                          <span>Daily high:</span>
+                          <span className="font-mono font-semibold">${calculationDetails.momentum.dailyHigh}</span>
+                        </div>
+                        <div className="flex justify-between text-emerald-700">
+                          <span>Daily low:</span>
+                          <span className="font-mono font-semibold">${calculationDetails.momentum.dailyLow}</span>
+                        </div>
+                        <div className="flex justify-between text-emerald-700">
+                          <span>Current price:</span>
+                          <span className="font-mono font-semibold">${calculationDetails.momentum.currentPrice}</span>
+                        </div>
+                        <div className="flex justify-between text-emerald-800 font-semibold pt-1 border-t border-emerald-300">
+                          <span>Position in range:</span>
+                          <span className="font-mono">{calculationDetails.momentum.positionInRange}</span>
+                        </div>
+                      </>
+                    )}
+                    {selectedMetric === 'volatility' && calculationDetails.volatility && (
+                      <>
+                        <div className="flex justify-between text-emerald-700">
+                          <span>Daily high:</span>
+                          <span className="font-mono font-semibold">${calculationDetails.volatility.dailyHigh}</span>
+                        </div>
+                        <div className="flex justify-between text-emerald-700">
+                          <span>Daily low:</span>
+                          <span className="font-mono font-semibold">${calculationDetails.volatility.dailyLow}</span>
+                        </div>
+                        <div className="flex justify-between text-emerald-700">
+                          <span>Previous close:</span>
+                          <span className="font-mono font-semibold">${calculationDetails.volatility.previousClose}</span>
+                        </div>
+                        <div className="flex justify-between text-emerald-800 font-semibold pt-1 border-t border-emerald-300">
+                          <span>Volatility:</span>
+                          <span className="font-mono">{calculationDetails.volatility.volatilityPercent}</span>
+                        </div>
+                      </>
+                    )}
+                    {selectedMetric === 'market' && calculationDetails.market && (
+                      <>
+                        <div className="flex justify-between text-emerald-700">
+                          <span>Company:</span>
+                          <span className="font-semibold">{calculationDetails.market.companyName}</span>
+                        </div>
+                        <div className="flex justify-between text-emerald-700">
+                          <span>Market cap:</span>
+                          <span className="font-mono font-semibold">${calculationDetails.market.marketCap}</span>
+                        </div>
+                        <div className="flex justify-between text-emerald-800 font-semibold pt-1 border-t border-emerald-300">
+                          <span>Classification:</span>
+                          <span className="font-semibold">{calculationDetails.market.tier}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Right Column */}

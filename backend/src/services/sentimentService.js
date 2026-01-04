@@ -170,6 +170,5 @@ function aggregateSentiments(sentimentResults) {
 module.exports = {
   analyzeSentiment,
   analyzeMultipleSentiments,
-  aggregateSentiments,
-  mapRoBERTaLabel
+  aggregateSentiments
 };

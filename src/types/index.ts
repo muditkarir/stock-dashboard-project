@@ -36,6 +36,13 @@ export interface StockScore {
     market?: number;
     trend?: number;
   };
+  calculationDetails?: {
+    price?: any;
+    momentum?: any;
+    volatility?: any;
+    market?: any;
+    trend?: any;
+  };
   explanation: string;
   recommendation: {
     action: string;

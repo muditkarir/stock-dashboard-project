@@ -23,9 +23,19 @@ class StockScoringService {
         market: this.calculateMarketScore(profile)
       };
 
+      // Store calculation details for transparency
+      const calculationDetails = {
+        price: this.getPriceDetails(quote),
+        momentum: this.getMomentumDetails(quote),
+        volatility: this.getVolatilityDetails(quote),
+        market: this.getMarketDetails(profile)
+      };
+
       // Add historical performance if available
-      if (historicalData && historicalData.c && historicalData.c.length > 1) {
-        scores.trend = this.calculateTrendScore(historicalData);
+      if (historicalData && historicalData.c && historicalData.c.length >= 10) {
+        const trendData = this.calculateTrendScoreWithDetails(historicalData);
+        scores.trend = trendData.score;
+        calculationDetails.trend = trendData.details;
       }
 
       // Calculate weighted average
@@ -54,6 +64,7 @@ class StockScoringService {
         score: Math.max(0, Math.min(100, finalScore)),
         ...this.getScoreLabel(finalScore),
         breakdown: scores,
+        calculationDetails,
         explanation: this.generateExplanation(scores, quote)
       };
     } catch (error) {
@@ -141,9 +152,9 @@ class StockScoringService {
   calculateTrendScore(historicalData) {
     if (!historicalData || !historicalData.c || historicalData.c.length < 10) return 50;
 
-    const prices = historicalData.c.slice(-20); // Last 20 data points
-    const recentPrices = prices.slice(-5); // Last 5 data points
-    const olderPrices = prices.slice(-20, -15); // 5 data points from 15-20 positions ago
+    const prices = historicalData.c.slice(-20);
+    const recentPrices = prices.slice(-5);
+    const olderPrices = prices.slice(-20, -15);
 
     const recentAvg = recentPrices.reduce((a, b) => a + b, 0) / recentPrices.length;
     const olderAvg = olderPrices.reduce((a, b) => a + b, 0) / olderPrices.length;
@@ -156,6 +167,86 @@ class StockScoringService {
     if (trendPercent > -5) return 35;
     if (trendPercent > -10) return 20;
     return 10;
+  }
+
+  calculateTrendScoreWithDetails(historicalData) {
+    if (!historicalData || !historicalData.c || historicalData.c.length < 10) {
+      return { score: 50, details: { error: 'Insufficient data' } };
+    }
+
+    const prices = historicalData.c.slice(-20);
+    const recentPrices = prices.slice(-5);
+    const olderPrices = prices.slice(-20, -15);
+
+    const recentAvg = recentPrices.reduce((a, b) => a + b, 0) / recentPrices.length;
+    const olderAvg = olderPrices.reduce((a, b) => a + b, 0) / olderPrices.length;
+    const trendPercent = ((recentAvg - olderAvg) / olderAvg) * 100;
+
+    let score;
+    if (trendPercent > 10) score = 90;
+    else if (trendPercent > 5) score = 80;
+    else if (trendPercent > 0) score = 65;
+    else if (trendPercent > -5) score = 35;
+    else if (trendPercent > -10) score = 20;
+    else score = 10;
+
+    return {
+      score,
+      details: {
+        recentAvg: recentAvg.toFixed(2),
+        olderAvg: olderAvg.toFixed(2),
+        trendPercent: trendPercent.toFixed(2),
+        direction: trendPercent > 0 ? 'upward' : trendPercent < 0 ? 'downward' : 'flat'
+      }
+    };
+  }
+
+  getPriceDetails(quote) {
+    if (!quote || typeof quote.dp !== 'number') return { error: 'No data' };
+    return {
+      currentPrice: quote.c?.toFixed(2),
+      previousClose: quote.pc?.toFixed(2),
+      changePercent: quote.dp?.toFixed(2),
+      changeAmount: quote.d?.toFixed(2)
+    };
+  }
+
+  getMomentumDetails(quote) {
+    if (!quote || !quote.h || !quote.l || !quote.c) return { error: 'No data' };
+    const range = quote.h - quote.l;
+    const positionInRange = range === 0 ? 0.5 : (quote.c - quote.l) / range;
+    return {
+      currentPrice: quote.c.toFixed(2),
+      dailyHigh: quote.h.toFixed(2),
+      dailyLow: quote.l.toFixed(2),
+      positionInRange: (positionInRange * 100).toFixed(1) + '%'
+    };
+  }
+
+  getVolatilityDetails(quote) {
+    if (!quote || !quote.h || !quote.l || !quote.pc) return { error: 'No data' };
+    const volatility = ((quote.h - quote.l) / quote.pc) * 100;
+    return {
+      dailyHigh: quote.h.toFixed(2),
+      dailyLow: quote.l.toFixed(2),
+      previousClose: quote.pc.toFixed(2),
+      volatilityPercent: volatility.toFixed(2) + '%'
+    };
+  }
+
+  getMarketDetails(profile) {
+    if (!profile || !profile.marketCapitalization) return { error: 'No data' };
+    const marketCap = profile.marketCapitalization;
+    let tier = 'Micro Cap';
+    if (marketCap > 10000) tier = 'Large Cap';
+    else if (marketCap > 2000) tier = 'Mid Cap';
+    else if (marketCap > 300) tier = 'Small Cap';
+    
+    return {
+      marketCap: marketCap.toFixed(2) + 'M',
+      tier,
+      companyName: profile.name || 'Unknown'
+    };
   }
 
   /**
